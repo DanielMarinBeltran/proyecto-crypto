@@ -1,6 +1,10 @@
-import React, { useDebugValue } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from '@emotion/styled'
+import { useDispatch, useSelector } from 'react-redux';
 import useMoneda from '../hooks/useMoneda';
+import useCryptomoneda from '../hooks/useCriptomoneda';
+import { consultarAPIAction } from '../redux/actions/consultarAPIAction';
+import Error from './Error';
 
 const Boton = styled.input`
   margin-top: 20px;
@@ -19,7 +23,22 @@ const Boton = styled.input`
   }
 `
 
-const Formulario = () => {
+const Formulario = ( {guardarMoneda, guardarCriptomoneda} ) => {
+
+  // State validacion
+
+  const [ error, guardarError ] = useState(false);
+
+  // Traje la info que necesito de la API
+  const dispatch = useDispatch();
+
+  useEffect(()=>{
+    dispatch(consultarAPIAction())
+  },[]);
+  const {info} = useSelector(state => state.info);
+  // console.log(info)
+
+  // MONEDAS
 
   const MONEDAS = [
     {codigo: 'USD', nombre: 'Dolar de Estados Unidos'},
@@ -32,9 +51,34 @@ const Formulario = () => {
   // Utilizar useMoneda
 
   const [ moneda, SelectMonedas] = useMoneda('Elige tu Moneda', '', MONEDAS);
+
+  // Utilizar useCriptomoneda
+  const [criptomoneda, SelectCripto] = useCryptomoneda('Elige tu Criptomoneda', '', info)
+
+  // cuando el usuario hace submit
+  const cotizarMoneda = e =>{
+    e.preventDefault();
+
+    // Validar si cambos campos estan llenos
+    if (moneda === '' || criptomoneda === '') {
+      guardarError(true);
+      return;
+    }
+
+    // pasar los datos al componente principal
+    guardarError(false);
+    guardarMoneda(moneda);
+    guardarCriptomoneda(criptomoneda);
+
+  }
+
   return (
-    <form>
+    <form
+      onSubmit={cotizarMoneda}
+    >
+      {error ? <Error mensaje ='Todos los campos son obligatorios'/> : null}
       <SelectMonedas/>
+      <SelectCripto />
       <Boton
         type='submit'
         value='Calcular'
